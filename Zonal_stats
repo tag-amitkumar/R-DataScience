@@ -1,0 +1,97 @@
+# Zonal stats claculation for tile shapefile on single raster file
+
+library(raster)
+library(sf)
+library(exactextractr)
+library(future.apply)
+library(dplyr)
+
+# Set the number of cores for parallelization
+n_cores <- parallel::detectCores() - 4
+plan(multisession, workers = n_cores)
+
+# Set working directory
+setwd("E:/")
+
+# Load the raster and shapefile
+rast <- brick("./gebco_2024_geotiff/gebco_global_mosaic.tif")
+catch <- st_read("E:/global_era5_grid.shp")
+
+# Define the function to extract mean value for a single grid ID
+extract_mean <- function(feature) {
+  mean_value <- exact_extract(rast, feature, 'mean')
+  return(data.frame(Grid_ID = feature$id, dem_mean = mean_value))
+}
+
+# Apply the extraction in parallel over all features in the shapefile
+result_list <- future_lapply(1:nrow(catch_1), function(i) {
+  extract_mean(catch_1[i, ])
+})
+
+# Combine the list of results into a single data frame
+result_df <- do.call(rbind, result_list)
+
+# Define the output CSV file path
+output_csv <- "gebco_dem_global_era5_grid.csv"
+
+# Write to the CSV file
+if (file.exists(output_csv)) {
+  write.table(result_df, file = output_csv, append = TRUE, sep = ",", col.names = FALSE, row.names = FALSE)
+} else {
+  write.table(result_df, file = output_csv, sep = ",", col.names = TRUE, row.names = FALSE)
+}
+
+
+# # Zonal stats claculation for tile shapefile on Multiple rasters file  and parallel processing as well using future.apply library
+# Load required libraries
+library(raster)
+library(sf)
+library(exactextractr)
+library(future.apply)
+library(dplyr)
+library(tools)
+
+# Set working directory
+setwd("E:/")
+
+# List of raster files
+raster_files <- list.files("./gebco_2024_geotiff/copy", pattern = "\\.tif$", full.names = TRUE)
+
+# Read the shapefile and filter for specific IDs
+catch <- st_read("E:/global_era5_grid.shp") %>% 
+  filter(id %in% c(1, 2, 3))
+
+# Initialize an empty data frame to store results
+result_df <- data.frame(Grid_ID = catch$id)
+
+# Set up parallel processing
+n_cores <- parallel::detectCores() - 1
+plan(multisession, workers = n_cores)
+
+raster_names <- file_path_sans_ext(basename(raster_files))
+# Loop through each raster file and extract mean values
+for (i in seq_along(raster_files)) {
+  # Load the raster file
+  rast <- brick(raster_files[i])
+  
+  # Extract mean values in parallel
+  mean_values <- future_lapply(1:nrow(catch), function(j) {
+    exact_extract(rast, catch[j, ], 'mean')
+  })
+  
+  # Combine the results and add them as a new column using the raster file name
+  result_df[[raster_names[i]]] <- unlist(mean_values)
+}
+
+# Define the output CSV file path
+output_csv <- "gebco_dem_global_era5_grid_filtered_means.csv"
+
+# Write the final data frame to CSV
+if (file.exists(output_csv)) {
+  write.table(result_df, file = output_csv, append = TRUE, sep = ",", col.names = FALSE, row.names = FALSE)
+} else {
+  write.table(result_df, file = output_csv, sep = ",", col.names = TRUE, row.names = FALSE)
+}
+
+# End parallel processing
+plan(sequential)
