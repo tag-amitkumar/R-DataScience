@@ -1,0 +1,41 @@
+library(tiff)
+
+# Read the ASCII text file into R
+ascii_data <- read.table("C:/Users/AmitKumar/Downloads/999.TXT", header = FALSE)
+
+# Convert the data to a matrix (if not already)
+image_matrix <- as.matrix(ascii_data)
+
+# Normalize the matrix if needed (e.g., scale values between 0 and 1 or 0 and 255)
+# This step depends on the range of values in your ASCII file
+# For example, to scale to 0-255:
+image_matrix <- (image_matrix - min(image_matrix)) / (max(image_matrix) - min(image_matrix)) * 255
+
+# Save the matrix as a TIFF file
+writeTIFF(image_matrix, "output_image.tiff")
+
+library(raster)
+raster_data <- raster("E:/projects/merit/dem/all_tif/99991.TXT")
+# Replace NODATA values with NA
+raster_data[raster_data == -9999] <- NA
+
+# Define the extent using the lower left corner and cell size
+xllcorner <- 631433.2368594969
+yllcorner <- 5044346.03076386
+cellsize <- 30.0
+ncols <- 246
+nrows <- 325
+
+# Calculate the upper right corner
+xurcorner <- xllcorner + (ncols * cellsize)
+yurcorner <- yllcorner + (nrows * cellsize)
+
+# Set the extent
+extent(raster_data) <- extent(xllcorner, xurcorner, yllcorner, yurcorner)
+
+
+# Set the CRS (example for UTM Zone 33N, WGS84)
+crs(raster_data) <- CRS("+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs")
+writeRaster(raster_data, "C:/Users/AmitKumar/Downloads/output_image4.tiff", format="GTiff",overwrite=TRUE )
+
+
