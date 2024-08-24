@@ -1,0 +1,42 @@
+# Load necessary libraries
+library(utils)
+
+# List of .tar files
+tar_files <- list.files(path = "E:/projects/merit/dem",
+                        pattern = "\\.tar$",
+                        full.names = TRUE)
+
+# Extract all .tar files
+lapply(tar_files, function(tar_file) {
+  untar(tar_file, exdir = "E:/projects/merit/dem/tif")
+})
+
+# List all .tif files
+tif_files <- list.files(path = "E:/projects/merit/dem/tif",
+                        pattern = "\\.tif$",
+                        full.names = TRUE, recursive = T)
+
+# Load the raster package
+library(raster)
+
+# List all .tif files
+tif_files <- list.files(path = "path_to_extract", pattern = "\\.tif$", full.names = TRUE)
+
+# Load the first raster to use as a reference for extent and resolution
+reference_raster <- raster(tif_files[1])
+
+# Resample all rasters to the same extent and resolution as the reference raster
+aligned_rasters <- lapply(tif_files, function(file) {
+  raster_obj <- raster(file)
+  resample(raster_obj, reference_raster, method = "bilinear")  # Adjust method as needed
+})
+
+# Stack the aligned rasters
+raster_stack <- stack(aligned_rasters)
+
+# Define the output VRT file path
+vrt_output <- "output_vrt_file.vrt"
+
+# Write the raster stack to a VRT file
+writeRaster(raster_stack, filename = vrt_output, format = "VRT", overwrite = TRUE)
+
