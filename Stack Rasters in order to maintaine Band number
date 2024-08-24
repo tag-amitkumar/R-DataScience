@@ -1,0 +1,40 @@
+
+            ###############        raster stacking     ##################
+
+# Stack Rasters in order to maintaine Band number
+
+library(raster)
+setwd("E:/projects/bioc/UKESM1-0-LL/2081_2100/ssp585/")
+
+# Specify the file names in the desired order
+file_names <- c("b1_wc21_30s_bioc_UKESM1_0_LL_ssp585_2081_2100_idw.tif",
+                "b2_wc21_30s_bioc_UKESM1_0_LL_ssp585_2081_2100_idw.tif")
+
+# Create an empty stack
+stacked_raster <- stack()
+
+# Loop through the specified file names
+for (file in file_names) {
+  # Read each raster file and add it to the stack
+  r <- raster(file)
+  stacked_raster <- addLayer(stacked_raster, r)
+}
+
+# Save the stacked raster
+writeRaster(stacked_raster,
+            "UKESM1_0_LL_ssp585_2081_2100_idw.tif",
+            format = "GTiff")
+
+
+# stack netcdf/.nc files
+library(raster)
+library(ncdf4)
+setwd("E:/projects/global/soil/")
+
+file_names <- c("SILT1.nc","SILT2.nc")
+stacked_raster <- stack(file_names)
+writeRaster(stacked_raster,     "SILT.tif",      format = "GTiff")
+
+file_names <- "REF_DEPTH1.nc"
+stacked_raster <- stack(file_names)
+writeRaster(stacked_raster,     "REF_DEPTH1.tif",      format = "GTiff")
