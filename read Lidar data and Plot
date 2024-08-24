@@ -1,0 +1,18 @@
+library(lidR)
+library(viridis)
+
+setwd("./Your_working_dir")
+las_data <- readLAS("LiDAR_DHMV_1/ATL12401/Tiles/dhm3_p09d02_008_161000_241000.laz")
+
+# Step 2: Filter ground points
+ground_points <- filter_poi(las_data, Classification == 2)
+
+# Step 3: Generate DEM
+dem <- rasterize_terrain(ground_points, res = 1, algorithm = knnidw(k = 10L))
+
+
+# Define a custom color palette
+custom_palette <- viridis::viridis(256)
+
+# Example of using the custom palette in the plot
+plot(dem, col = custom_palette, main = "DEM Plot")
